@@ -31,6 +31,12 @@ board = env.BoardConfig()
 FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoadafruitnrf52")
 assert isdir(FRAMEWORK_DIR)
 
+CORE_DIR = join(FRAMEWORK_DIR, "cores", board.get("build.core"))
+assert isdir(CORE_DIR)
+
+NORDIC_DIR = join(CORE_DIR, "nordic")
+assert isdir(NORDIC_DIR)
+
 env.Append(
     CFLAGS=["-std=gnu11"],
 
@@ -48,46 +54,43 @@ env.Append(
         "ARDUINO_ARCH_NRF5",
         "NRF5",
         "NRF52",
+        "ARDUINO_FEATHER52",
+        "ARDUINO_NRF52_ADAFRUIT",
+        "NRF52_SERIES",
         ("ARDUINO_BSP_VERSION", '\\"0.7.5\\"' )
     ],
 
     LIBPATH=[
-        join(FRAMEWORK_DIR, "cores", board.get("build.core"),
-             "SDK", "components", "toolchain", "gcc")
+        join(CORE_DIR, "linker")
     ],
 
-    #compiler.nrf.flags=-DARDUINO_NRF52_ADAFRUIT -DNRF5 -DNRF52 -DNRF52832_XXAA -DUSE_LFXO {build.sd_flags} {build.debug_flags} 
-    # "-I{nrf.sdk.path}/components/toolchain/" 
-    # "-I{nrf.sdk.path}/components/toolchain/cmsis/include" 
-    # "-I{nrf.sdk.path}/components/toolchain/gcc/" 
-    # "-I{nrf.sdk.path}/components/device/" 
-    # "-I{nrf.sdk.path}/components/drivers_nrf/delay/" 
-    # "-I{nrf.sdk.path}/components/drivers_nrf/hal/" 
-    # "-I{nrf.sdk.path}/components/libraries/util/" 
-    # "-I{build.core.path}/softdevice/{build.sd_name}/{build.sd_version}/headers/" 
-    # "-I{rtos.path}/source/include" 
+    #compiler.nrf.flags= -DARDUINO_FEATHER52 -DARDUINO_NRF52_ADAFRUIT -DNRF52_SERIES {build.sd_flags} {build.debug_flags} 
+    # "-I{build.core.path}/cmsis/include" 
+    # "-I{nordic.path}" 
+    # "-I{nordic.path}/nrfx" 
+    # "-I{nordic.path}/nrfx/hal" 
+    # "-I{nordic.path}/nrfx/mdk" 
+    # "-I{nordic.path}/nrfx/soc" 
+    # "-I{nordic.path}/nrfx/drivers/include" 
+    # "-I{nordic.path}/softdevice/{build.sd_name}_nrf52_{build.sd_version}_API/include" 
+    # "-I{rtos.path}/Source/include" 
     # "-I{rtos.path}/config" 
-    # "-I{rtos.path}/portable/GCC/nrf52" 
+    # "-I{rtos.path}/portable/GCC/nrf52"
     # "-I{rtos.path}/portable/CMSIS/nrf52" 
     # "-I{build.core.path}/sysview/SEGGER" 
-    # "-I{build.core.path}/sysview/Config" {nffs.includes}
-
+    # "-I{build.core.path}/sysview/Config" 
+    # "-I{build.core.path}/usb" 
+    # "-I{build.core.path}/usb/tinyusb/src"
+ 
     CPPPATH=[
-        join(FRAMEWORK_DIR, "cores", board.get("build.core")),
-        join(FRAMEWORK_DIR, "cores", board.get("build.core"),
-             "SDK", "components", "drivers_nrf", "delay"),
-        join(FRAMEWORK_DIR, "cores", board.get("build.core"),
-             "SDK", "components", "drivers_nrf", "hal"),
-        join(FRAMEWORK_DIR, "cores", board.get("build.core"),
-             "SDK", "components", "device"),
-        join(FRAMEWORK_DIR, "cores", board.get("build.core"),
-             "SDK", "components", "toolchain"),
-        join(FRAMEWORK_DIR, "cores", board.get("build.core"),
-             "SDK", "components", "toolchain", "cmsis", "include"),
-        join(FRAMEWORK_DIR, "cores", board.get("build.core"),
-             "SDK", "components", "toolchain", "gcc"),
-        join(FRAMEWORK_DIR, "cores", board.get("build.core"),
-             "SDK", "components", "libraries", "util")
+        join(CORE_DIR),
+        join(CORE_DIR, "cmsis", "include"),
+        join(NORDIC_DIR),
+        join(NORDIC_DIR, "nrfx"),
+        join(NORDIC_DIR, "nrfx", "hal"),
+        join(NORDIC_DIR, "nrfx", "mdk"),
+        join(NORDIC_DIR, "nrfx", "soc"),
+        join(NORDIC_DIR, "nrfx", "drivers", "include"),
     ],
 
     LINKFLAGS=[
@@ -127,30 +130,31 @@ env.Append(
 # Process softdevice options
 softdevice_name = None
 cpp_defines = env.Flatten(env.get("CPPDEFINES", []))
-softdevice_name = "s132"
-softdevice_ver = "5.1.0"
-bootloader_type = "dual"
-board_name = "feather52"
+softdevice_name = board.get("build.softdevice", "s132")
+softdevice_ver = "6.1.1"
+softdevice_ver_short = "611"
+softdevice_ver_long = "%sr0" % softdevice_ver
+board_name = board.get("build.bootloader", "feather_nrf52832")
 
 if softdevice_name:
     env.Append(
         CPPPATH=[
-            join(FRAMEWORK_DIR, "cores", board.get("build.core"),
-                "softdevice", softdevice_name, softdevice_ver, "headers")
+            join(NORDIC_DIR, "softdevice", "%s_nrf52_%s_API" % (softdevice_name, softdevice_ver), "include")
         ],
 
         CPPDEFINES=[
             "%s" % softdevice_name.upper(),
-            ("SD_VER", "510"),
+            ("SD_VER", softdevice_ver_short),
+            "NRF52_"+(softdevice_name.upper()),
             "SOFTDEVICE_PRESENT"
         ]
     )
 
-    hex_path = join(FRAMEWORK_DIR, "bin", "bootloader",
-                    board_name, softdevice_ver, bootloader_type)
+    hex_path = join(FRAMEWORK_DIR, "bootloader",
+                    board_name, softdevice_ver_long)
 
     for f in listdir(hex_path):
-        if f == "%s_bootloader_%s_%s_%s.hex" % (board_name, softdevice_ver, softdevice_name, bootloader_type):
+        if f == "%s_bootloader_%s_%s.hex" % (board_name, softdevice_name, softdevice_ver_long):
             env.Append(DFUBOOTHEX=join(hex_path, f))
 
     if "DFUBOOTHEX" not in env:
@@ -177,23 +181,32 @@ if softdevice_name:
         print("Warning! Cannot find an appropriate linker script for the "
               "required softdevice!")
 
-freertos_path = join(FRAMEWORK_DIR, "cores", board.get("build.core"), "freertos")
+freertos_path = join(CORE_DIR, "freertos")
 if(isdir(freertos_path)):
     env.Append(
         CPPPATH=[
-            join(freertos_path, "source", "include"),
+            join(freertos_path, "Source", "include"),
             join(freertos_path, "config"),
             join(freertos_path, "portable", "GCC", "nrf52"),
             join(freertos_path, "portable", "CMSIS", "nrf52")
         ]
     )
 
-sysview_path = join(FRAMEWORK_DIR, "cores", board.get("build.core"), "sysview")
+sysview_path = join(CORE_DIR, "sysview")
 if(isdir(sysview_path)):
     env.Append(
         CPPPATH=[
             join(sysview_path, "SEGGER"),
             join(sysview_path, "Config")
+        ]
+    )
+
+usb_path = join(CORE_DIR, "usb")
+if(isdir(usb_path)):
+    env.Append(
+        CPPPATH=[
+            join(usb_path),
+            join(usb_path, "tinyusb", "src")
         ]
     )
 
@@ -208,29 +221,29 @@ if(isdir(sysview_path)):
 # "-I{nffs.path}/sys/flash_map/include" 
 # "-I{nffs.path}/sys/defs/include"
 
-nffs_path = join(FRAMEWORK_DIR, "libraries", "nffs", "src")
-if(isdir(nffs_path)):
-    env.Append(
-        CPPPATH=[
-            join(nffs_path, "fs", "nffs", "include"),
-            join(nffs_path, "fs", "fs", "include"),
-            join(nffs_path, "fs", "disk", "include"),
-            join(nffs_path, "util", "crc", "include"),
-            join(nffs_path, "kernel", "os", "include"),
-            join(nffs_path, "kernel", "os", "include", "os", "arch", "cortex_m4"),
-            join(nffs_path, "hw", "hal", "include"),
-            join(nffs_path, "sys", "flash_map", "include"),
-            join(nffs_path, "sys", "defs", "include")
-        ]
-    )
+#nffs_path = join(FRAMEWORK_DIR, "libraries", "nffs", "src")
+#if(isdir(nffs_path)):
+#    env.Append(
+#        CPPPATH=[
+#            join(nffs_path, "fs", "nffs", "include"),
+#            join(nffs_path, "fs", "fs", "include"),
+#            join(nffs_path, "fs", "disk", "include"),
+#            join(nffs_path, "util", "crc", "include"),
+#            join(nffs_path, "kernel", "os", "include"),
+#            join(nffs_path, "kernel", "os", "include", "os", "arch", "cortex_m4"),
+#            join(nffs_path, "hw", "hal", "include"),
+#            join(nffs_path, "sys", "flash_map", "include"),
+#            join(nffs_path, "sys", "defs", "include")
+#        ]
+#    )
 
 
 #print env.Dump()
 
 # Select crystal oscillator as the low frequency source by default
-clock_options = ("USE_LFXO", "USE_LFRC", "USE_LFSYNT")
-if not any(d in clock_options for d in cpp_defines):
-    env.Append(CPPDEFINES=["USE_LFXO"])
+#clock_options = ("USE_LFXO", "USE_LFRC", "USE_LFSYNT")
+#if not any(d in clock_options for d in cpp_defines):
+#    env.Append(CPPDEFINES=["USE_LFXO"])
 
 #
 # Target: Build Core Library
@@ -252,6 +265,6 @@ if "build.variant" in board:
 libs.append(
     env.BuildLibrary(
         join("$BUILD_DIR", "FrameworkArduino"),
-        join(FRAMEWORK_DIR, "cores", board.get("build.core"))))
+        join(CORE_DIR)))
 
 env.Prepend(LIBS=libs)
