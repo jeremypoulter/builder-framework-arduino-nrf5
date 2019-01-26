@@ -20,12 +20,22 @@ class PioBuilder:
         )
 
     def add_cppdefines(self):
+        self.env.Append(
+            CPPDEFINES=[
+                # For compatibility with sketches designed for AVR@16 MHz (see SPI lib)
+                ("F_CPU", "16000000L")
+            ]
+        )
+
         cpp_defines = self.env.Flatten(self.env.get("CPPDEFINES", []))
 
         # Select crystal oscillator as the low frequency source by default
         clock_options = ("USE_LFXO", "USE_LFRC", "USE_LFSYNT")
         if not any(d in clock_options for d in cpp_defines):
             self.env.Append(CPPDEFINES=["USE_LFXO"])
+
+        # For compatibility with sketches designed for AVR@16 MHz (see SPI lib)
+        ("F_CPU", "16000000L"),
 
     def add_libpath(self):
         self.env.Append(

@@ -75,7 +75,6 @@ env.Append(
 
     CPPDEFINES=[
         ("ARDUINO", 10805),
-        ("F_CPU", board.get("build.f_cpu")),
         "ARDUINO_ARCH_NRF5",
         "NRF5"
     ],
