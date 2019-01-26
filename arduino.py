@@ -127,12 +127,6 @@ env.Append(
 # Process softdevice options
 builder.process_softdevice()
 
-cpp_defines = env.Flatten(env.get("CPPDEFINES", []))
-
-# Select crystal oscillator as the low frequency source by default
-clock_options = ("USE_LFXO", "USE_LFRC", "USE_LFSYNT")
-if not any(d in clock_options for d in cpp_defines):
-    env.Append(CPPDEFINES=["USE_LFXO"])
 
 #
 # Target: Build Core Library
