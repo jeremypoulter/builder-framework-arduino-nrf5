@@ -43,7 +43,7 @@ class AdafruitBuilder:
 
     def add_cppdefines(self):
         self.env.Append(
-            CPP_DEFINES=[
+            CPPDEFINES=[
                 "NRF52",
                 "ARDUINO_FEATHER52",
                 "ARDUINO_NRF52_ADAFRUIT",
@@ -122,17 +122,15 @@ class AdafruitBuilder:
 
             for f in listdir(hex_path):
                 if f == "{0}_bootloader-{1}_{2}_{3}.hex".format(self.variant, self.bootloader_version, self.softdevice_name, self.softdevice_version):
-                    self.env.Append(DFUDEVICEHEX=join(hex_path, f))
+                    self.env.Append(DFUBOOTHEX=join(hex_path, f))
 
-            if "DFUDEVICEHEX" not in self.env:
+            if "DFUBOOTHEX" not in self.env:
                 print("Warning! Cannot find an appropriate softdevice binary!")
 
             # Update linker script:
             ldscript_dir = join(self.coreDir, "linker")
-            mcu_family = self.board.get("build.mcu")
             ldscript_name = self.board.get("build.ldscript", "")
             if ldscript_name:
-                ldscript_path = join(ldscript_dir, f)
                 self.env.Append(LINKFLAGS=[
                     "-L"+ldscript_dir,
                     #             "-T"+ldscript_name
