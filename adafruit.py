@@ -163,7 +163,7 @@ env.Append(
 
 # Process softdevice options
 softdevice_name = board.get("build.softdevice.sd_name")
-board_name = board.get("build.bootloader.hex_filename", board.get("build.variant"))
+board_name = board.get("build.bootloader.variant", board.get("build.variant"))
 
 if softdevice_name:
     env.Append(
@@ -180,7 +180,7 @@ if softdevice_name:
     hex_path = join(FRAMEWORK_DIR, "bootloader", board_name)
 
     for f in listdir(hex_path):
-        if f == "{0}_bootloader-{1}_{2}_{3}.hex".format(variant, bootloader_version, softdevice_name, softdevice_version):
+        if f == "{0}_bootloader-{1}_{2}_{3}.hex".format(board_name, bootloader_version, softdevice_name, softdevice_version):
             env.Append(DFUBOOTHEX=join(hex_path, f))
 
     if "DFUBOOTHEX" not in env:
