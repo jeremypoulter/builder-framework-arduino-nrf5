@@ -41,7 +41,7 @@ assert isdir(NORDIC_DIR)
 # IMPROVE: Read all of these (defaults) from build.txt/platform.txt/programmers.txt?
 bsp_version = board.get("build.bsp.version", "0.9.3")
 softdevice_version = board.get("build.softdevice.sd_version", "6.1.1")
-bootloader_version = board.get("build.bootloader.version", "0.2.6")
+bootloader_version = board.get("build.bootloader.version", "0.2.7")
 
 env.Append(
     ASFLAGS=["-x", "assembler-with-cpp"],
