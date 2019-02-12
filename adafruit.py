@@ -233,6 +233,7 @@ if(isdir(usb_path)):
 env.Append(
     CPPPATH=[
         join(CORE_DIR),
+        join(CORE_DIR, "utility"),
     ]
 )
 
